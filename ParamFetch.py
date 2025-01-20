@@ -5,28 +5,25 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin, parse_qs
 from colorama import Fore, Style
 
-# إعدادات السجل
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logging.getLogger('').handlers[0].setFormatter(logging.Formatter('%(message)s'))
 
-# دالة لاستخراج الروابط من الصفحة
 def fetch_links_from_page(url):
     try:
         response = requests.get(url, timeout=10)
-        response.raise_for_status()  # التحقق من حالة الاستجابة
+        response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
         links = set()
         for a_tag in soup.find_all("a", href=True):
             full_url = urljoin(url, a_tag["href"])
-            links.add(full_url)  # استخدام set لإزالة التكرارات تلقائيًا
+            links.add(full_url)
 
         return list(links)
     except requests.RequestException as e:
         logging.error(f"{Fore.RED}[ERROR]{Style.RESET_ALL} Failed to fetch links from {url}: {e}")
         return []
 
-# دالة لتصفية الروابط بناءً على نمط معين
 def filter_links(links, pattern=None):
     filtered = []
     for link in links:
@@ -44,34 +41,29 @@ def filter_links(links, pattern=None):
 
     return filtered
 
-# دالة للتحقق من حالة الرابط
 def check_link_status(links):
     valid_links = []
     for link in links:
         try:
-            response = requests.head(link, timeout=5)  # استخدام head بدلاً من get لتقليل التأخير
+            response = requests.head(link, timeout=5)
             if response.status_code == 200:
                 valid_links.append(link)
         except requests.RequestException:
-            pass  # تجاهل أي استثناءات
+            pass
 
     return valid_links
 
-# دالة لحفظ النتائج في الملف
 def save_results(results, filename="parameter.txt"):
     try:
-        # التأكد من أن اسم الملف هو "parameter.txt" فقط
         filename = "parameter.txt"
         
         with open(filename, "w") as f:
-            # كتابة جميع النتائج دفعة واحدة لتسريع العملية
             f.writelines([f"[+] {result}\n" for result in results])
         logging.info(f"{Fore.BLUE}[INFO]{Style.RESET_ALL} Results saved to {filename}")
     
     except Exception as e:
         logging.error(f"{Fore.RED}[ERROR]{Style.RESET_ALL} Failed to save results: {e}")
 
-# دالة رئيسية لتشغيل البرنامج
 def main():
     print(rf"""
 {Fore.YELLOW}
@@ -109,7 +101,6 @@ hjw \  |         |  /
 
         logging.info(f"{Fore.BLUE}[INFO]{Style.RESET_ALL} Found {Fore.GREEN + str(len(page_links)) + Style.RESET_ALL} links.")
 
-        # عرض جميع الروابط المكتشفة
         print(f"{Fore.GREEN}[INFO]{Style.RESET_ALL} All extracted links:")
         for link in page_links:
             print(f"{Fore.GREEN}[+]{Style.RESET_ALL} {link}")
@@ -120,12 +111,10 @@ hjw \  |         |  /
         valid_links = check_link_status(filtered_links)
         logging.info(f"{Fore.BLUE}[INFO]{Style.RESET_ALL} Found {Fore.GREEN + str(len(valid_links)) + Style.RESET_ALL} valid links.")
 
-        # عرض الروابط الصالحة
         print(f"{Fore.GREEN}[INFO]{Style.RESET_ALL} Valid links:")
         for link in valid_links:
             print(f"{Fore.GREEN}[+]{Style.RESET_ALL} {link}")
 
-        # حفظ النتائج في ملف
         save_results(valid_links, "parameter.txt")
 
     except KeyboardInterrupt:
